@@ -2,7 +2,8 @@
   "_comment": "Simple Packer Template using Amazon Linux 2017.03",
   "variables": {
     "aws_access_key": "{{env `aws_access_key`}}",
-    "aws_secret_key": "{{env `aws_secret_key`}}"
+    "aws_secret_key": "{{env `aws_secret_key`}}",
+    "build": "{{env `Build`}}"
   },
   "builders": [{
     "type": "amazon-ebs",
@@ -12,7 +13,7 @@
     "source_ami": "ami-0d1000aff9a9bad89",
     "instance_type": "t2.micro",
     "ssh_username": "ec2-user",
-    "ami_name": "HelloWorld Build-{{user `Build`}}"
+    "ami_name": "HelloWorld Build-{{user `build`}}"
   }],
   "provisioners": [{
     "type": "shell",
@@ -20,7 +21,6 @@
       "sleep 30",
       "sudo yum update -y",
       "sudo yum install java-1.8.0 java-1.8.0-openjdk-devel tomcat8-webapps -y",
-      "sudo yum remove java-1.7.0-openjdk  -y",
       "sudo wget https://github.com/lobster1234/helloworld-api/files/953511/helloworld-api.war.gz -O /usr/share/tomcat8/webapps/helloworld-api.war.gz",
       "sudo gunzip /usr/share/tomcat8/webapps/helloworld-api.war.gz",
       "sudo chkconfig tomcat8 on"
