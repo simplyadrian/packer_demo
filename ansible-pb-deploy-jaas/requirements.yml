@@ -1,0 +1,27 @@
+- src: https://github.com/intuitivetechnologygroup/ansible-role-cfn-elb
+  name: elb
+  version: 1.0.0
+
+- src: https://github.com/intuitivetechnologygroup/ansible-role-cfn-ecs
+  name: ecs
+  version: 1.0.0
+
+- src: https://github.com/intuitivetechnologygroup/ansible-role-cfn-ecs-task
+  name: ecs_task
+  version: 1.0.0
+
+- src: https://github.com/intuitivetechnologygroup/ansible-role-cfn-ecs-service
+  name: ecs_service
+  version: 1.0.0
+
+- src: https://github.com/intuitivetechnologygroup/ansible-role-cfn-security-groups
+  name: security_groups
+  version: 1.0.0
+
+- src: https://github.com/intuitivetechnologygroup/ansible-role-module-cfn-lookup
+  name: cfn_lookup
+  version: 1.0.1
+
+- src: https://github.com/intuitivetechnologygroup/ansible-role-cfn-cloudwatch-alarms
+  name: alarms
+  version: 1.0.0

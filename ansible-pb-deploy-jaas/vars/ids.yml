@@ -1,0 +1,330 @@
+security_token: "{{ lookup('env','AWS_SESSION_TOKEN') }}"
+sg_security_token: "{{ security_token }}"
+aws_account_number: "491692662146"
+jenkins_image: "simplyadrian/jenkins-dood"
+region: "us-west-2"
+vpc_id: "vpc-0513a75ef692fbf80"
+vpc_ip_cidr: "172.22.0.0/20"
+vpn_ip_cidr: "10.0.0.0/8"
+vpc_public_subnets: "subnet-0ea2f7e2f64db6536,subnet-00a5c0dec86889b8e"
+ecs_instance_type: "m3.2xlarge"
+ecs_log_group_name: "{{ org }}_jenkins_logs"
+ecs_log_pattern: ""
+subscription_filter_name: "{{ org }}_jenkins_logs"
+
+# Security groups
+sg_role_stack_name: "{{ ecs_stack_name }}-security-groups"
+sg_name: "{{ org }}_internal"
+sg_vpc: "{{ vpc_id }}"
+sg_scheme: "internal"
+sg_rules:
+  - protocol: tcp
+    port: 22
+    instance_protocol: tcp
+    instancePort: 22
+sg_internal_cidrs:
+  - "{{ vpc_ip_cidr }}"
+  - "{{ vpn_ip_cidr }}"
+
+# CFN Lookup
+cfn_lookup_stacks:
+  - stack_name: "{{ sg_role_stack_name }}"
+    region: "{{ region }}"
+    fact_name: "sg_stack_output"
+
+# ECS ASG
+ecs_asg_max_capacity: 2
+ecs_asg_min_capacity: 1
+ecs_asg_desired_capacity: 1
+
+
+ecs_region: "{{ region }}"
+ecs_host_vpc: "{{ vpc_id }}"
+ecs_stack_name: "{{ org }}-{{ region }}-jenkins-ecs-cluster"
+ecs_sg_ids: "{{ sg_stack_output['BackendSecurityGroupId'] }},{{ elb_cf_output.stack_outputs.TargetSecurityGroupId }}"
+ecs_subnets: "{{ vpc_public_subnets }}"
+ecs_credstash_table_arn: "arn:aws:dynamodb:{{ region }}:{{ aws_account_number }}:table/credential-store"
+ecs_credstash_kms_key_arn: "arn:aws:kms:{{ region }}:{{ aws_account_number }}:key/2d8e3764-c76d-4016-b2d4-2369e546e743"
+ecs_stack_description: "ECS Cluster for Jenkins"
+
+# ECS IAM
+ecs_iam_role_stack_name: "{{ ecs_stack_name }}-ecs-iam-role"
+iam_role_description: "Role for {{ org }} ECS Jenkins cluster"
+ecs_iam_role_policies:
+  - name: JenkinsECS
+    policy:
+      "Version": "2012-10-17"
+      "Statement":
+        - "Effect": "Allow"
+          "Action":
+            - "s3:Get*"
+            - "s3:List*"
+          "Resource": "arn:aws:s3:::ids-deploy-artifacts"
+        - "Effect": "Allow"
+          "Action":
+            - "s3:Get*"
+            - "s3:List*"
+            - "s3:PutObject"
+          "Resource": "arn:aws:s3:::ids-deploy-artifacts/*"
+        - "Effect": "Allow"
+          "Action":
+            - "s3:Get*"
+            - "s3:List*"
+          "Resource": "arn:aws:s3:::ids-jenkins-backups"
+        - "Effect": "Allow"
+          "Action":
+            - "s3:Get*"
+            - "s3:List*"
+            - "s3:PutObject"
+          "Resource": "arn:aws:s3:::ids-jenkins-backups/*"
+        - "Effect": "Allow"
+          "Action":
+            - "autoscaling:CreateAutoScalingGroup"
+            - "autoscaling:CreateLaunchConfiguration"
+            - "autoscaling:DeleteAutoScalingGroup"
+            - "autoscaling:DeleteLaunchConfiguration"
+            - "autoscaling:Describe*"
+            - "autoscaling:SetDesiredCapacity"
+            - "autoscaling:TerminateInstanceInAutoScalingGroup"
+            - "autoscaling:UpdateAutoScalingGroup"
+          "Resource": "*"
+        - "Effect": "Allow"
+          "Action":
+            - "cloudformation:CreateStack"
+            - "cloudformation:UpdateStack"
+            - "cloudformation:DeleteStack"
+            - "cloudformation:DescribeStacks"
+            - "cloudformation:DescribeStackEvents"
+            - "cloudformation:DescribeStackResources"
+            - "cloudformation:GetTemplate"
+            - "cloudformation:ValidateTemplate"
+            - "cloudformation:ListStackResources"
+            - "cloudformation:ListStacks"
+          "Resource" : "*"
+        - "Effect": "Allow"
+          "Action":
+            - "cloudwatch:ListMetrics"
+            - "cloudwatch:GetMetricStatistics"
+            - "cloudwatch:Describe*"
+          "Resource": "*"
+        - "Effect": "Allow"
+          "Action":
+            - "ec2:AssociateAddress"
+            - "ec2:AuthorizeSecurityGroupEgress"
+            - "ec2:AuthorizeSecurityGroupIngress"
+            - "ec2:CreateSecurityGroup"
+            - "ec2:Describe*"
+            - "ec2:RevokeSecurityGroupEgress"
+          "Resource": "*"
+        - "Effect": "Allow"
+          "Action":
+            - "ecs:CreateCluster"
+            - "ecs:CreateService"
+            - "ecs:DeleteCluster"
+            - "ecs:DeleteService"
+            - "ecs:DescribeServices"
+            - "ecs:DeregisterContainerInstance"
+            - "ecs:DeregisterTaskDefinition"
+            - "ecs:DiscoverPollEndpoint"
+            - "ecs:Poll"
+            - "ecs:RegisterContainerInstance"
+            - "ecs:RegisterTaskDefinition"
+            - "ecs:StartTelemetrySession"
+            - "ecs:Submit*"
+            - "ecs:UpdateService"
+          "Resource": "*"
+        - "Effect": "Allow"
+          "Action":
+            - "elasticloadbalancing:ConfigureHealthCheck"
+            - "elasticloadbalancing:CreateLoadBalancer"
+            - "elasticloadbalancing:Describe*"
+            - "elasticloadbalancing:DeregisterInstancesFromLoadBalancer"
+            - "elasticloadbalancing:ModifyLoadBalancerAttributes"
+            - "elasticloadbalancing:RegisterInstancesWithLoadBalancer"
+            - "elasticloadbalancing:SetLoadBalancerPoliciesOfListener"
+          "Resource": "*"
+        - "Effect": "Allow"
+          "Action":
+            - "ecr:GetAuthorizationToken"
+            - "ecr:BatchCheckLayerAvailability"
+            - "ecr:GetDownloadUrlForLayer"
+            - "ecr:BatchGetImage"
+            - "ecr:InitiateLayerUpload"
+            - "ecr:UploadLayerPart"
+            - "ecr:CompleteLayerUpload"
+            - "ecr:PutImage"
+            - "ecr:DescribeRepositories"
+            - "ecr:CreateRepository"
+            - "ecr:DeleteRepository"
+            - "ecr:SetRepositoryPolicy"
+          "Resource": "*"
+        - "Effect": "Allow"
+          "Action":
+            - "iam:AddRoleToInstanceProfile"
+            - "iam:AttachRolePolicy"
+            - "iam:CreateRole"
+            - "iam:CreateInstanceProfile"
+            - "iam:DeleteInstanceProfile"
+            - "iam:DeleteRole"
+            - "iam:DeleteRolePolicy"
+            - "iam:DetachRolePolicy"
+            - "iam:GetRole"
+            - "iam:PassRole"
+            - "iam:PutRolePolicy"
+            - "iam:RemoveRoleFromInstanceProfile"
+          "Resource": "*"
+        - "Effect": "Allow"
+          "Action":
+            - "logs:CreateLogGroup"
+            - "logs:CreateLogStream"
+            - "logs:PutLogEvents"
+          "Resource" : "*"
+        - "Effect": "Allow"
+          "Action":
+            - "kms:Decrypt"
+          "Resource": "{{ ecs_credstash_kms_key_arn }}"
+        - "Effect": "Allow"
+          "Action":
+            - "dynamodb:Query"
+            - "dynamodb:GetItem"
+          "Resource": "{{ ecs_credstash_table_arn }}"
+
+#Jenkins ECS Cluster
+ecs_cluster_name: "{{ ecs_cluster_cf_output.stack_outputs.ecscluster }}"
+ecs_service_cluster_name: "{{ ecs_cluster_cf_output.stack_outputs.ecscluster }}"
+
+#Jenkins ECS Service
+ecs_service_stack_name: "{{ ecs_stack_name }}-service"
+ecs_service_container_name: "jenkins"
+ecs_service_task: "{{ ecs_task_cf_output.stack_outputs.taskdef }}"
+ecs_service_container_port: "8080"
+ecs_service_elb_name: "{{ elb_cf_output.stack_outputs.LoadBalancerName }}"
+ecs_service_deploy_min_healthy_percent: "0"
+ecs_service_deploy_max_percent: "100"
+
+
+#Jenkins ECS Task
+ecs_task_container_definitions:
+  - "Name": "jenkins"
+    "Memory": "28672"
+    "Image": "{{ jenkins_image }}"
+    "Cpu" : "1024"
+    "PortMappings" :
+      - "ContainerPort" : "8080"
+        "HostPort" : "8080"
+        "Protocol" : "http"
+      - "ContainerPort" : "50000"
+        "HostPort" : "50000"
+        "Protocol" : "tcp"
+    "MountPoints":
+      - "ContainerPath": "/var/run/docker.sock"
+        "SourceVolume": "docker"
+        "ReadOnly": false
+    "LogConfiguration":
+      "LogDriver": "awslogs"
+      "Options":
+         "awslogs-group": "{{ ecs_log_group_name }}"
+         "awslogs-region": "{{ region }}"
+         "awslogs-stream-prefix": "{{ org }}_jenkins_logs"
+ecs_task_volume_definitions:
+  - "Host":
+      "SourcePath": "/var/run/docker.sock"
+    "Name": "docker"
+ecs_task_count: 1
+ecs_task_stack_name: "{{ ecs_stack_name }}-task"
+
+# Jenkins ELB
+elb_scheme: 'internet-facing'
+elb_acm_id: 'b542a74d-e611-46a2-b08e-1d941e95f1ce'
+elb_listeners:
+  - protocol: https
+    port: 443
+    instance_protocol: http
+    instancePort: 8080
+elb_internal_cidrs:
+  - "{{ vpc_ip_cidr }}"
+  - "{{ vpn_ip_cidr }}"
+elb_subnets: "{{ vpc_public_subnets }}"
+elb_vpc: "{{ ecs_host_vpc }}"
+elb_role_stack_name: "{{ elb_stack_name }}"
+elb_health_check_healthy_threshold: 2
+elb_health_check_unhealthy_threshold: 10
+elb_health_check_interval: 10
+elb_health_check_timeout: 9
+elb_health_check_target: "TCP:8080"
+elb_cross_zone: "true"
+elb_dns_name: "jenkins-{{org}}.idscloud.io"
+elb_zone_name: "idscloud.io"
+elb_stack_name: "{{ ecs_stack_name }}-elb"
+
+ecs_container_port: 8080
+ecs_host_ami: "ami-00430184c7bb49914"
+ecs_host_keypair_name: "adrian5"
+ecs_tags:
+    "Name" : "{{ org }}-jenkins-ecs"
+    "ids:unit" : "devops"
+    "ids:product" : "bdp"
+    "ids:subproduct" : "jenkins"
+    "ids:owner" : "aherrera@idsgrp.com"
+    "ids:env" : "dev"
+
+
+cloudwatch_stack_name: "{{ ecs_stack_name }}-alarms"
+cw_alarms_stack_name: "{{ ecs_stack_name }}-alarms"
+cloudwatch_ecs_cluster_name: "{{ ecs_service_cluster_name }}"
+cloudwatch_ecs_elb_name: "{{ elb_cf_output.stack_outputs.LoadBalancerName }}"
+cloudwatch_sns_topic_name: "ElasticSearch.{{ org }}.AuthAlarms"
+cw_alarms_stack_region: "{{ region }}"
+
+cloudwatch_sns_topic_subscriptions:
+  - endpoint: "aherrera@idsgrp.com"
+    protocol: "email"
+
+cw_alarms:
+  - name: "ECSCPUUtiliation"
+    namespace: "AWS/ECS"
+    metric: "CPUUtilization"
+    eval_periods: 5
+    statistic: "Maximum"
+    threshold: 60
+    period_length: 60
+    comparison_operator: "GreaterThanThreshold"
+    dimensions:
+      - name: "ClusterName"
+        value: "{{ cloudwatch_ecs_cluster_name }}"
+
+  - name: "ECSMemoryUtilizationAlarm"
+    namespace: "AWS/ECS"
+    metric: "MemoryUtilization"
+    eval_periods: 5
+    statistic: "Maximum"
+    threshold: 60
+    period_length: 60
+    comparison_operator: "GreaterThanThreshold"
+    dimensions:
+      - name: "ClusterName"
+        value: "{{ cloudwatch_ecs_cluster_name }}"
+
+  - name: "ECSELBBackendErrors"
+    namespace: "AWS/ELB"
+    metric: "BackendConnectionErrors"
+    eval_periods: 1
+    statistic: "Minimum"
+    threshold: 0
+    period_length: 60
+    comparison_operator: "GreaterThanThreshold"
+    dimensions:
+      - name: "LoadBalancerName"
+        value: "{{ cloudwatch_ecs_elb_name }}"
+
+  - name: "ECSELBUnhealthyHostCount"
+    namespace: "AWS/ELB"
+    metric: "UnHealthyHostCount"
+    eval_periods: 1
+    statistic: "Average"
+    threshold: 0
+    period_length: 60
+    comparison_operator: "GreaterThanThreshold"
+    dimensions:
+      - name: "LoadBalancerName"
+        value: "{{ cloudwatch_ecs_elb_name }}"

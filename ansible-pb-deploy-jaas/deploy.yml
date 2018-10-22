@@ -1,0 +1,23 @@
+- hosts: localhost
+  gather_facts: False
+  vars:
+  vars_files:
+    - "vars/{{ org }}.yml"
+
+  pre_tasks:
+    - shell: aws --region "{{ region }}" logs describe-log-groups --log-group-name-prefix "{{ ecs_log_group_name }}"
+      register: log_group_name_results
+
+    - debug: var=log_group_name_results.stdout|from_json
+
+    - shell: aws --region "{{ region }}" logs create-log-group --log-group-name "{{ ecs_log_group_name }}"
+      when: (log_group_name_results.stdout | from_json).logGroups|length == 0
+
+  roles:
+    - role: elb
+    - role: security_groups
+    - role: cfn_lookup
+    - role: ecs
+    - role: ecs_task
+    - role: ecs_service
+    - role: alarms

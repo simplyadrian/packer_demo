@@ -1,0 +1,2 @@
+workflow-job
+cloudbees-folder:6.2.0
