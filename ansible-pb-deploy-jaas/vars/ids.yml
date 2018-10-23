@@ -59,24 +59,13 @@ ecs_iam_role_policies:
           "Action":
             - "s3:Get*"
             - "s3:List*"
-          "Resource": "arn:aws:s3:::ids-deploy-artifacts"
+          "Resource": "arn:aws:s3:::idsgrp-dev-files-us"
         - "Effect": "Allow"
           "Action":
             - "s3:Get*"
             - "s3:List*"
             - "s3:PutObject"
-          "Resource": "arn:aws:s3:::ids-deploy-artifacts/*"
-        - "Effect": "Allow"
-          "Action":
-            - "s3:Get*"
-            - "s3:List*"
-          "Resource": "arn:aws:s3:::ids-jenkins-backups"
-        - "Effect": "Allow"
-          "Action":
-            - "s3:Get*"
-            - "s3:List*"
-            - "s3:PutObject"
-          "Resource": "arn:aws:s3:::ids-jenkins-backups/*"
+          "Resource": "arn:aws:s3:::idsgrp-dev-files-us/*"
         - "Effect": "Allow"
           "Action":
             - "autoscaling:CreateAutoScalingGroup"
