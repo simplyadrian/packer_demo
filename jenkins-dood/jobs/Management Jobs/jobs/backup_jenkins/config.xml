@@ -18,7 +18,7 @@
     <hudson.tasks.Shell>
       <command>#!/bin/bash
 cd / &amp;&amp; tar -cvzf /tmp/jenkins_data.tgz /var/jenkins_home
-aws --region REPLACEME3 s3 cp /tmp/jenkins_data.tgz s3://REPLACEME1/REPLACEME2/jenkins/jenkins_data.tgz
+aws --region REPLACEME3 s3 cp /tmp/jenkins_data.tgz s3://REPLACEME1/REPLACEME2/jenkins_data.tgz
 rm -f /tmp/jenkins_data.tgz</command>
     </hudson.tasks.Shell>
   </builders>
