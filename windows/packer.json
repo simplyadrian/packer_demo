@@ -33,12 +33,6 @@
         {
             "type": "powershell",
             "script": "./windows/scripts/RunTests.ps1"
-        },
-        {
-            "type": "file",
-            "source": "TestResults.xml",
-            "destination": "TestResults.xml",
-            "direction": "download"
         }
     ]
 }
