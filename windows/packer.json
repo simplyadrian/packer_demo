@@ -8,7 +8,7 @@
             "region": "us-west-2",
             "instance_type": "t2.micro",
             "ami_name": "HelloWorld Windows Build-{{user `build`}}",
-            "user_data_file": "./scripts/SetUpWinRM.ps1",
+            "user_data_file": "./windows/scripts/SetUpWinRM.ps1",
             "communicator": "winrm",
             "winrm_username": "Administrator",
             "winrm_use_ssl": true,
@@ -20,19 +20,19 @@
         {
             "type": "powershell",
             "scripts": [
-                "./scripts/EC2Config.ps1",
-                "./scripts/BundleConfig.ps1",
-                "./scripts/SetUpDevTools.ps1"
+                "./windows/scripts/EC2Config.ps1",
+                "./windows/scripts/BundleConfig.ps1",
+                "./windows/scripts/SetUpDevTools.ps1"
             ]
         },
         {
             "type": "file",
-            "source": "./tests",
+            "source": "./windows/tests",
             "destination": "C:/Windows/Temp"
         },
         {
             "type": "powershell",
-            "script": "./scripts/RunTests.ps1"
+            "script": "./windows/scripts/RunTests.ps1"
         },
         {
             "type": "file",
