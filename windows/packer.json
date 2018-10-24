@@ -40,10 +40,5 @@
             "destination": "TestResults.xml",
             "direction": "download"
         }
-    ],
-    "post-processors": [
-        {
-            "type": "manifest"
-        }
     ]
 }
