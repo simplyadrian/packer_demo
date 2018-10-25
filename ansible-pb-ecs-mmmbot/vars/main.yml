@@ -1,0 +1,130 @@
+ecs_tags:
+  "Name" : "mmmbot"
+  "IDS:unit" : "devops"
+  "IDS:product" : "application-infrastructure"
+  "IDS:subproduct" : "mmmbot"
+  "IDS:owner" : "aherrera@idsgrp.com"
+  "IDS:env" : "dev"
+region: "us-west-2"
+aws_account_number: "491692662146"
+ecs_log_group_name: "mmmbot_logs"
+ecs_log_pattern: ""
+subscription_filter_name: "mmmbot_logs"
+destination_arn: "arn:aws:logs:us-west-2:491692662146:destination:CloudWatchElasticSearchDestination"
+ecs_service_stack_name: "mmmbot-service-stack"
+ecs_service_container_name: "mmmbot"
+ecs_service_task: "{{ ecs_task_cf_output.stack_outputs.taskdef }}"
+ecs_service_cluster_name: "{{ ecs_cluster_cf_output.stack_outputs.ecscluster }}"
+ecs_service_deploy_min_healthy_percent: "0"
+ecs_service_deploy_max_percent: "100"
+ecs_asg_max_capacity: 2
+ecs_asg_min_capacity: 1
+ecs_asg_desired_capacity: 1
+ecs_service_desired_count: 1
+ecs_stack_name: "mmmbot-ecs-stack"
+ecs_host_vpc: "vpc-0513a75ef692fbf80"
+ecs_subnets: "subnet-00a5c0dec86889b8e,subnet-0ea2f7e2f64db6536"
+ecs_sg_ids: "sg-04a235c81dc703623"
+ecs_host_keypair_name: "adrian5"
+ecs_task_stack_name: "mmmbot-ecs-task-stack"
+ecs_task_container_definitions:
+  - "Name": "mmmbot"
+    "Memory": "990"
+    "Image": "simplyadrian/mmmbot"
+    "Cpu" : "1024"
+    "MountPoints":
+      - "ContainerPath": "/var/run/docker.sock"
+        "SourceVolume": "docker_sock"
+        "ReadOnly": false
+    "Environment":
+      - "Name": "HUBOT_S3_BRAIN_BUCKET"
+        "Value": "idsgrp-dev-files-us"
+      - "Name": "HUBOT_S3_BRAIN_FILE_PATH"
+        "Value": "hubot"
+      - "Name": "CREDSTASH_REF_GHTOKEN"
+        "Value": "mmmbot.github_token"
+      - "Name": "CREDSTASH_REGION"
+        "Value": "us-west-2"
+      - "Name": "CREDSTASH_REF_SLACKTOKEN"
+        "Value": "mmmbot.slack_token"
+      - "Name": "CREDSTASH_REF_CSE_ID"
+        "Value": "mmmbot.google_cse_id"
+      - "Name": "CREDSTASH_REF_CSE_KEY"
+        "Value": "mmmbot.google_cse_key"
+    "LogConfiguration": 
+      "LogDriver": "awslogs"
+      "Options": 
+         "awslogs-group": "{{ ecs_log_group_name }}"
+         "awslogs-region": "{{ region }}"
+         "awslogs-stream-prefix": "mmmbot_logs"
+ecs_task_volume_definitions:
+  - "Host":
+      "SourcePath": "/var/run/docker.sock"
+    "Name": "docker_sock"
+ecs_instance_type: "t2.micro"
+ecs_iam_role_policies:
+  - name: mmmbotECS
+    policy:
+      "Version": "2012-10-17"
+      "Statement":
+        - "Effect": "Allow"
+          "Action": ['logs:CreateLogGroup', 'logs:CreateLogStream', 'logs:PutLogEvents']
+          "Resource" : "*"
+        - "Effect": "Allow"
+          "Action":
+            - "ec2:AssociateAddress"
+            - "ec2:Describe*"
+          "Resource": "*"
+        - "Effect": "Allow"
+          "Action":
+            - "elasticloadbalancing:Describe*"
+          "Resource": "*"
+        - "Effect": "Allow"
+          "Action":
+            - "cloudwatch:ListMetrics"
+            - "cloudwatch:GetMetricStatistics"
+            - "cloudwatch:Describe*"
+          "Resource": "*"
+        - "Effect": "Allow"
+          "Action": "autoscaling:Describe*"
+          "Resource": "*"
+        - "Effect": "Allow"
+          "Action":
+            - "elasticloadbalancing:Describe*"
+            - "elasticloadbalancing:DeregisterInstancesFromLoadBalancer"
+            - "elasticloadbalancing:RegisterInstancesWithLoadBalancer"
+            - "ec2:Describe*"
+            - "ec2:AuthorizeSecurityGroupIngress"
+          "Resource": "*"
+        - "Effect": "Allow"
+          "Action":
+            - "ecs:CreateCluster"
+            - "ecs:DeregisterContainerInstance"
+            - "ecs:DiscoverPollEndpoint"
+            - "ecs:Poll"
+            - "ecs:RegisterContainerInstance"
+            - "ecs:StartTelemetrySession"
+            - "ecs:Submit*"
+            - "ecr:GetAuthorizationToken"
+            - "ecr:BatchCheckLayerAvailability"
+            - "ecr:GetDownloadUrlForLayer"
+            - "ecr:BatchGetImage"
+          "Resource": "*"
+        - "Effect": "Allow"
+          "Action":
+            - "s3:*"
+          "Resource":
+            - "arn:aws:s3:::idsgrp-dev-files-us"
+            - "arn:aws:s3:::idsgrp-dev-files-us/*"
+        - "Effect": "Allow"
+          "Action":
+            - "kms:decrypt"
+          "Resource":
+            - "arn:aws:kms:{{ region }}:{{ aws_account_number }}:key/b85e87d7-27f4-492d-8eca-96838be6e880"
+        - "Effect": "Allow"
+          "Action":
+            - "dynamodb:GetItem"
+            - "dynamodb:Query"
+            - "dynamodb:Scan"
+          "Resource":
+            - "arn:aws:dynamodb:{{ region }}:{{ aws_account_number }}:table/credential-store"
